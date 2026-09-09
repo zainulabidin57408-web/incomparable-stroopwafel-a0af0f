@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touchline — Football News &amp; Live Scores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch: #0B3D24;
+    --turf: #1F6D3F;
+    --chalk: #F5F3EA;
+    --ink: #171512;
+    --paper: #FFFFFF;
+    --line: #DBD5C4;
+    --goal: #D64926;
+    --live: #E7B23A;
+    --font-display: 'Big Shoulders Display', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Roboto Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--chalk);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.5;
+  }
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+
+  /* ---------- utility top bar ---------- */
+  .utility{
+    background:var(--ink);
+    color:#cfc9b8;
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.02em;
+  }
+  .utility .wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    height:34px;
+  }
+  .utility a{opacity:.85;}
+  .utility a:hover{opacity:1;color:#fff;}
+  .utility-links{display:flex;gap:18px;}
+  .utility .clock::before{
+    content:"●";
+    color:var(--live);
+    margin-right:6px;
+    font-size:9px;
+    position:relative;
+    top:-1px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    background:var(--pitch);
+    color:var(--chalk);
+    border-bottom:3px solid var(--goal);
+  }
+  .masthead .wrap{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding-top:22px;
+    padding-bottom:14px;
+  }
+  .wordmark{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:clamp(34px,5vw,52px);
+    letter-spacing:.01em;
+    line-height:.85;
+    text-transform:uppercase;
+  }
+  .wordmark span{color:var(--live);}
+  .masthead-meta{
+    text-align:right;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:#B9CDBC;
+  }
+  .masthead-meta strong{display:block;color:var(--chalk);font-size:13px;margin-bottom:2px;}
+
+  nav.primary{
+    background:#0E2E1C;
+  }
+  nav.primary ul{
+    list-style:none;
+    display:flex;
+    gap:2px;
+    margin:0;
+    padding:0;
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 20px;
+  }
+  nav.primary a{
+    display:block;
+    padding:13px 16px;
+    color:#D9E4DC;
+    font-size:14px;
+    font-weight:600;
+    border-bottom:3px solid transparent;
+  }
+  nav.primary a:hover, nav.primary a.active{
+    color:#fff;
+    border-bottom-color:var(--goal);
+  }
+
+  /* ---------- live ticker ---------- */
+  .ticker-band{
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    position:relative;
+  }
+  .ticker-label{
+    position:absolute;
+    left:0;top:0;bottom:0;
+    background:var(--goal);
+    color:#fff;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:0 14px;
+    z-index:2;
+  }
+  .ticker-label i{
+    width:7px;height:7px;border-radius:50%;
+    background:#fff;
+    animation:pulse 1.4s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:.25;}
+  }
+  .ticker-track{
+    display:flex;
+    gap:0;
+    padding-left:112px;
+    animation:scroll 38s linear infinite;
+    width:max-content;
+  }
+  .ticker-band:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+  .fixture{
+    font-family:var(--font-mono);
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 22px;
+    border-right:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .fixture .comp{color:#8a8371;font-size:11px;margin-right:2px;}
+  .fixture .score{font-weight:600;background:var(--chalk);padding:2px 7px;border-radius:2px;}
+  .fixture .min{color:var(--goal);font-weight:600;}
+
+  /* ---------- layout grid ---------- */
+  main{padding:34px 0 10px;}
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    gap:36px;
+  }
+
+  .lead-block{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:30px;
+    padding-bottom:30px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:26px;
+  }
+  .kicker{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--goal);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .lead h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(28px,3.4vw,42px);
+    line-height:1.02;
+    margin:0 0 12px;
+  }
+  .lead p{
+    color:#4a463d;
+    font-size:16px;
+    margin:0 0 14px;
+    max-width:56ch;
+  }
+  .byline{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:#8a8371;
+  }
+
+  .also-breaking h2{
+    font-family:var(--font-display);
+    font-size:18px;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:8px;
+    margin:0 0 4px;
+  }
+  .also-breaking ul{list-style:none;margin:0;padding:0;}
+  .also-breaking li{
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .also-breaking li:last-child{border-bottom:none;}
+  .also-breaking a{
+    font-weight:600;
+    font-size:14.5px;
+    line-height:1.35;
+  }
+  .also-breaking a:hover{color:var(--turf);}
+  .also-breaking time{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:#8a8371;
+    margin-top:5px;
+  }
+
+  /* section tabs */
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-bottom:22px;
+  }
+  .tabs button{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    background:none;
+    border:1px solid var(--line);
+    padding:8px 14px;
+    cursor:pointer;
+    color:#5a5648;
+  }
+  .tabs button.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .tabs button:hover:not(.active){border-color:var(--turf);color:var(--turf);}
+
+  .story-list{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px 28px;
+  }
+  .story{
+    display:flex;
+    gap:14px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .badge{
+    flex:0 0 40px;
+    width:40px;height:40px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:14px;
+    color:#fff;
+  }
+  .story h3{
+    font-family:var(--font-body);
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 6px;
+    line-height:1.3;
+  }
+  .story h3 a:hover{color:var(--turf);}
+  .story .meta{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:#8a8371;
+  }
+
+  /* sidebar */
+  .panel{
+    border:1px solid var(--line);
+    background:var(--paper);
+    margin-bottom:26px;
+  }
+  .panel-head{
+    background:var(--pitch);
+    color:var(--chalk);
+    font-family:var(--font-display);
+    font-size:17px;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    padding:10px 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .panel-head a{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:#B9CDBC;
+    text-transform:none;
+    letter-spacing:0;
+  }
+  table.league{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  table.league th{
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:#8a8371;
+    font-weight:600;
+    padding:8px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  table.league td{
+    padding:7px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  table.league tr:last-child td{border-bottom:none;}
+  table.league td.num, table.league th.num{text-align:center;}
+  table.league td.pts{font-weight:700;}
+  table.league td.club{display:flex;align-items:center;gap:8px;}
+  .mono-badge{
+    width:20px;height:20px;border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-size:9px;font-weight:700;color:#fff;
+    flex:0 0 20px;
+  }
+  tr.zone-top td.rank{box-shadow:inset 3px 0 0 var(--turf);}
+
+  .transfer-list{list-style:none;margin:0;padding:10px 14px;}
+  .transfer-list li{
+    display:flex;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px dashed var(--line);
+    font-size:13px;
+  }
+  .transfer-list li:last-child{border-bottom:none;}
+  .transfer-arrow{color:var(--goal);font-weight:700;font-family:var(--font-mono);}
+
+  .subscribe{
+    background:var(--ink);
+    color:var(--chalk);
+    padding:20px;
+  }
+  .subscribe h2{
+    font-family:var(--font-display);
+    font-size:20px;
+    margin:0 0 8px;
+    text-transform:uppercase;
+  }
+  .subscribe p{font-size:13px;color:#c9c4b3;margin:0 0 14px;}
+  .subscribe form{display:flex;gap:0;}
+  .subscribe input{
+    flex:1;
+    border:1px solid #46402f;
+    background:#232019;
+    color:#fff;
+    padding:9px 10px;
+    font-family:var(--font-body);
+    font-size:13px;
+  }
+  .subscribe button{
+    background:var(--goal);
+    color:#fff;
+    border:none;
+    padding:0 16px;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+
+  footer{
+    background:var(--pitch);
+    color:#B9CDBC;
+    margin-top:40px;
+  }
+  .footer-grid{
+    display:grid;
+    grid-template-columns:1.4fr repeat(3,1fr);
+    gap:24px;
+    padding:40px 0 24px;
+  }
+  .footer-grid h4{
+    color:#fff;
+    font-family:var(--font-display);
+    font-size:15px;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    margin:0 0 12px;
+  }
+  .footer-grid ul{list-style:none;margin:0;padding:0;}
+  .footer-grid li{margin-bottom:8px;font-size:13px;}
+  .footer-grid a:hover{color:#fff;}
+  .footer-wordmark{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:26px;
+    color:#fff;
+    text-transform:uppercase;
+  }
+  .footer-bottom{
+    border-top:1px solid #1c4d31;
+    padding:16px 0 26px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  @media (max-width:920px){
+    .grid{grid-template-columns:1fr;}
+    .lead-block{grid-template-columns:1fr;}
+    .story-list{grid-template-columns:1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .utility .wrap{font-size:11px;}
+  }
+  @media (max-width:560px){
+    nav.primary ul{overflow-x:auto;}
+    .footer-grid{grid-template-columns:1fr;}
+  }
+
+  :focus-visible{outline:2px solid var(--goal);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .ticker-track{animation:none;}
+    .ticker-label i{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="utility">
+  <div class="wrap">
+    <div class="utility-links">
+      <a href="#">Edition: Global</a>
+      <a href="#">English</a>
+    </div>
+    <div class="clock">Matchday · Wed 9 Sep</div>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="wordmark">Touch<span>line</span></div>
+    <div class="masthead-meta">
+      <strong>Champions League Matchday 1</strong>
+      Scores, reaction &amp; reports — updated through the night
+    </div>
+  </div>
+</header>
+
+<nav class="primary">
+  <ul>
+    <li><a href="#" class="active">Home</a></li>
+    <li><a href="#">Matches</a></li>
+    <li><a href="#">Transfers</a></li>
+    <li><a href="#">Leagues</a></li>
+    <li><a href="#">Clubs</a></li>
+    <li><a href="#">Opinion</a></li>
+  </ul>
+</nav>
+
+<div class="ticker-band">
+  <div class="ticker-label"><i></i>LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<main class="wrap">
+  <div class="lead-block">
+    <div class="lead">
+      <div class="kicker">Champions League · Match Report</div>
+      <h1>Late header sends holders through as pressing plan finally cracks visitors</h1>
+      <p>A first-half stalemate broke open after the hour mark, with the home side's changed shape forcing three turnovers in five minutes before the winner arrived from a set piece the visitors had defended well all night.</p>
+      <div class="byline">Filed 06:40 · Reaction desk</div>
+    </div>
+    <div class="also-breaking">
+      <h2>Also Breaking</h2>
+      <ul>
+        <li><a href="#">Manager confirms captain will miss the weekend trip after knock in second half</a><time>Updated 21 min ago</time></li>
+        <li><a href="#">Record signing off the mark with composed finish on full debut</a><time>Updated 47 min ago</time></li>
+        <li><a href="#">Away end erupts as stoppage-time equaliser denies hosts first win of the group</a><time>Updated 1 hr ago</time></li>
+        <li><a href="#">Referee review: the penalty call that split pundits at half-time</a><time>Updated 2 hr ago</time></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col-main">
+      <div class="tabs" id="tabs">
+        <button class="active" data-cat="all">Headlines</button>
+        <button data-cat="epl">EPL</button>
+        <button data-cat="laliga">La Liga</button>
+        <button data-cat="seriea">Serie A</button>
+        <button data-cat="bundesliga">Bundesliga</button>
+        <button data-cat="transfers">Transfers</button>
+      </div>
+
+      <div class="story-list" id="storyList"></div>
+    </div>
+
+    <aside class="col-side">
+      <div class="panel">
+        <div class="panel-head">
+          <span>League Table</span>
+          <a href="#">Full table</a>
+        </div>
+        <table class="league">
+          <thead>
+            <tr><th>#</th><th>Club</th><th class="num">P</th><th class="num">W</th><th class="num">D</th><th class="num">L</th><th class="num">Pts</th></tr>
+          </thead>
+          <tbody id="leagueTable"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span>Transfer Wire</span>
+          <a href="#">All moves</a>
+        </div>
+        <ul class="transfer-list" id="transferList"></ul>
+      </div>
+
+      <div class="subscribe">
+        <h2>Matchday Brief</h2>
+        <p>One email after the final whistle — results, quotes and what's next. No spam, unsubscribe anytime.</p>
+        <form onsubmit="return false;">
+          <input type="email" placeholder="you@email.com" aria-label="Email address">
+          <button type="submit">Join</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <div class="footer-wordmark">Touchline</div>
+      <p style="font-size:13px;max-width:34ch;margin-top:10px;">Independent football coverage: scores, transfers and analysis from the leagues that matter, filed as it happens.</p>
+    </div>
+    <div>
+      <h4>Coverage</h4>
+      <ul>
+        <li><a href="#">Premier League</a></li>
+        <li><a href="#">La Liga</a></li>
+        <li><a href="#">Serie A</a></li>
+        <li><a href="#">Champions League</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Editorial Policy</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="#">Careers</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Follow</h4>
+      <ul>
+        <li><a href="#">X</a></li>
+        <li><a href="#">Instagram</a></li>
+        <li><a href="#">Facebook</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 Touchline Media. Demo content for layout purposes.</span>
+    <span>Built as a design reference</span>
+  </div>
+</footer>
+
+<script>
+// ---- demo data (all fictional / placeholder) ----
+const clubColors = {
+  "Real Sociedad":"#0B3D5B","Inter Milan":"#0A3D91","Man City":"#6CABDD","Porto":"#0057A8",
+  "Dortmund":"#FFD100","Villarreal":"#FFE066","Real Madrid":"#5E5E5E","Liverpool":"#C8102E",
+  "Arsenal":"#EF0107","Chelsea":"#034694","Bayern":"#DC052D","Juventus":"#1C1C1C",
+  "Marseille":"#2FA8E0","Ajax":"#D2122E","Benfica":"#E30613","Napoli":"#12A0D7"
+};
+function initials(name){
+  return name.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
+}
+function colorFor(name){
+  return clubColors[name] || "#5a5648";
+}
+
+const fixtures = [
+  {comp:"UCL", home:"Real Madrid", away:"Inter Milan", score:"2-1", min:"FT"},
+  {comp:"UCL", home:"Porto", away:"Man City", score:"0-2", min:"FT"},
+  {comp:"UCL", home:"Dortmund", away:"Villarreal", score:"3-2", min:"FT"},
+  {comp:"UCL", home:"Marseille", away:"Ajax", score:"1-1", min:"78'"},
+  {comp:"UCL", home:"Benfica", away:"Napoli", score:"2-0", min:"64'"},
+  {comp:"EPL", home:"Arsenal", away:"Chelsea", score:"—", min:"20:00"},
+  {comp:"La Liga", home:"Real Sociedad", away:"Villarreal", score:"—", min:"21:00"},
+];
+
+const trackEl = document.getElementById("tickerTrack");
+function renderTicker(){
+  const html = fixtures.map(f => `
+    <div class="fixture">
+      <span class="comp">${f.comp}</span>
+      <span>${f.home}</span>
+      <span class="score">${f.score}</span>
+      <span>${f.away}</span>
+      <span class="min">${f.min}</span>
+    </div>`).join("");
+  trackEl.innerHTML = html + html; // duplicate for seamless loop
+}
+renderTicker();
+
+const stories = [
+  {cat:"all", club:"Real Madrid", title:"Substitute's composed finish caps disciplined night against Serie A visitors", time:"06:46"},
+  {cat:"epl", club:"Man City", title:"Manager praises squad depth after rotated side eases past away test", time:"06:34"},
+  {cat:"laliga", club:"Real Sociedad", title:"Basque side hold onto unbeaten home record with gritty second-half defending", time:"06:07"},
+  {cat:"seriea", club:"Napoli", title:"Injury doubt clears ahead of weekend derby as striker returns to training", time:"06:04"},
+  {cat:"bundesliga", club:"Dortmund", title:"Five-goal thriller settled by stoppage-time header in front of a sold-out end", time:"05:58"},
+  {cat:"transfers", club:"Chelsea", title:"Board approves January move for versatile full-back after scouting reports", time:"05:28"},
+  {cat:"epl", club:"Liverpool", title:"Rotated midfield still finds a way through as away form continues", time:"05:19"},
+  {cat:"laliga", club:"Villarreal", title:"Comeback falls just short despite second-half surge from the bench", time:"05:19"},
+  {cat:"seriea", club:"Juventus", title:"Youth academy graduate handed first start in cup fixture tonight", time:"05:19"},
+  {cat:"bundesliga", club:"Bayern", title:"Front three combine for three goals in one-sided opening 45 minutes", time:"05:16"},
+  {cat:"transfers", club:"Arsenal", title:"Contract talks progressing for academy winger linked with Europe's elite", time:"05:04"},
+  {cat:"all", club:"Ajax", title:"Late leveller keeps European hopes alive after error-strewn first half", time:"05:01"},
+];
+
+const storyListEl = document.getElementById("storyList");
+function renderStories(cat){
+  const filtered = cat === "all" ? stories : stories.filter(s => s.cat === cat);
+  storyListEl.innerHTML = filtered.map(s => `
+    <div class="story">
+      <div class="badge" style="background:${colorFor(s.club)}">${initials(s.club)}</div>
+      <div>
+        <h3><a href="#">${s.title}</a></h3>
+        <div class="meta">${s.club} · ${s.time}</div>
+      </div>
+    </div>`).join("");
+}
+renderStories("all");
+
+document.getElementById("tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderStories(btn.dataset.cat);
+});
+
+const table = [
+  {club:"Man City", p:3,w:3,d:0,l:0,pts:9},
+  {club:"Arsenal", p:3,w:3,d:0,l:0,pts:9},
+  {club:"Liverpool", p:3,w:2,d:1,l:0,pts:7},
+  {club:"Chelsea", p:3,w:2,d:0,l:1,pts:6},
+  {club:"Bayern", p:3,w:1,d:2,l:0,pts:5},
+  {club:"Napoli", p:3,w:1,d:1,l:1,pts:4},
+];
+document.getElementById("leagueTable").innerHTML = table.map((t,i) => `
+  <tr class="${i<1?'zone-top':''}">
+    <td class="num rank">${i+1}</td>
+    <td class="club"><span class="mono-badge" style="background:${colorFor(t.club)}">${initials(t.club)}</span>${t.club}</td>
+    <td class="num">${t.p}</td>
+    <td class="num">${t.w}</td>
+    <td class="num">${t.d}</td>
+    <td class="num">${t.l}</td>
+    <td class="num pts">${t.pts}</td>
+  </tr>`).join("");
+
+const transfers = [
+  {player:"J. Almeida", from:"Benfica", to:"Marseille"},
+  {player:"T. Novak", from:"Ajax", to:"Napoli"},
+  {player:"R. Duarte", from:"Porto", to:"Villarreal"},
+  {player:"K. Osei", from:"Dortmund", to:"Arsenal"},
+];
+document.getElementById("transferList").innerHTML = transfers.map(t => `
+  <li>
+    <span>${t.player}</span>
+    <span class="transfer-arrow">${t.from} → ${t.to}</span>
+  </li>`).join("");
+</script>
+
+</body>
+</html>
